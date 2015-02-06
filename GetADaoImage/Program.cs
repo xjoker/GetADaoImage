@@ -73,12 +73,32 @@ namespace GetADaoImage
             WebClient webclient = new WebClient();
             try
             {
-                //下载图片
-                webclient.DownloadFile(imageURL + name, savePosition + "\\" + name);
-            }
-            catch
-            {
+                //savePosition + "\\" + name 这个是完整的路径
+
                 
+                
+                //如果已经下载了就不下载了
+                if (File.Exists(savePosition + "\\" + name))
+                {
+                    FileInfo ff = new FileInfo(savePosition + "\\" + name);
+                    if (ff.Length == 0)
+                    {
+                        //下载图片
+                        webclient.DownloadFile(imageURL + name, savePosition + "\\" + name);
+                    }
+                   
+                }
+                else
+                {
+                    //下载图片
+                    webclient.DownloadFile(imageURL + name, savePosition + "\\" + name);
+                }
+
+               
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine(ex);
                 Console.WriteLine(name+" 获取失败!");
                 log(name + " 获取失败!");
             }
