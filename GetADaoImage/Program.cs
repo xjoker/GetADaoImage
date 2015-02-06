@@ -23,6 +23,9 @@ namespace GetADaoImage
                 Directory.CreateDirectory(savePosition);
             }
 
+            //删除目录中的0KB文件
+            Delete_0KB();
+
             log(" ");
             log("----------------" + DateTime.Now + "----------------");
             log(" ");
@@ -46,17 +49,21 @@ namespace GetADaoImage
                 //每个线程启动后休眠半秒钟
                 for (int i = 1; i <= 5; i++)
                 {
-                    if (fail > 30)
-                    {
-                        System.Environment.Exit(-1);
-                    }
+                    
                     ParameterizedThreadStart ParStart = new ParameterizedThreadStart(DownImage);
                     Thread run = new Thread(ParStart);
 
                     //这里的count.ToString("0000")后面的0000的意思是自动补全到4位
                     run.Start(count.ToString("0000")+".jpg");
                     count++;
-                    Thread.Sleep(500);
+                    Thread.Sleep(100);
+                }
+                if (fail > 30)
+                {
+                    Thread.Sleep(5000);
+                    //删除目录中的0KB文件
+                    Delete_0KB();
+                    System.Environment.Exit(-1);
                 }
                 
             }
@@ -65,6 +72,11 @@ namespace GetADaoImage
 
         }
 
+
+        /// <summary>
+        /// 图片下载模块
+        /// </summary>
+        /// <param name="count">传入图片名</param>
         static void DownImage(object count)
         {
             string name = count.ToString();
@@ -76,19 +88,18 @@ namespace GetADaoImage
                 //savePosition + "\\" + name 这个是完整的路径
 
                 
-                
-                //如果已经下载了就不下载了
+                //如果已经下载了,并且文件大小大于0kb
                 if (File.Exists(savePosition + "\\" + name))
                 {
                     FileInfo ff = new FileInfo(savePosition + "\\" + name);
-                    if (ff.Length == 0)
+                    if (ff.Length<1)
                     {
+                        File.Delete(savePosition + "\\" + name);
                         //下载图片
                         webclient.DownloadFile(imageURL + name, savePosition + "\\" + name);
                     }
-                   
                 }
-                else
+                else if (!File.Exists(savePosition + "\\" + name))
                 {
                     //下载图片
                     webclient.DownloadFile(imageURL + name, savePosition + "\\" + name);
@@ -101,6 +112,8 @@ namespace GetADaoImage
                 Console.WriteLine(ex);
                 Console.WriteLine(name+" 获取失败!");
                 log(name + " 获取失败!");
+                fail++;
+                File.Delete(savePosition + "\\" + name);
             }
         }
 
@@ -111,6 +124,21 @@ namespace GetADaoImage
             {
                 sw.WriteLine(message);
                 sw.Dispose();
+            }
+        }
+
+
+        //删除0KB文件
+        static void Delete_0KB()
+        {
+            DirectoryInfo TheFolder = new DirectoryInfo(savePosition);
+            FileInfo[] files = TheFolder.GetFiles();
+            foreach (FileInfo c in files)
+            {
+                if(c.Length<1)
+                {
+                    c.Delete();
+                }
             }
         }
     }
